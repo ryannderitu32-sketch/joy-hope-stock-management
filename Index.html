@@ -1,0 +1,322 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joy Hope Stock Management</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101827;color:#f1f5f9;font-family:Arial,sans-serif}
+header{background:#172438;padding:20px}
+header h2{margin:0;color:#fbbf24}
+header p{margin:6px 0 0;color:#aab8ca;font-size:13px}
+nav{display:flex;overflow-x:auto;background:#1c2b40}
+nav button{background:none;color:#cbd5e1;border:0;padding:15px 13px;white-space:nowrap}
+nav button.active{color:#fbbf24;border-bottom:3px solid #fbbf24}
+main{padding:15px;max-width:850px;margin:auto}
+.panel{background:#1b293c;padding:16px;border-radius:13px;margin-bottom:14px}
+h3{margin-top:0;color:#fbbf24}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#263750;padding:15px;border-radius:10px}
+.stat small{color:#b7c5d6}
+.stat strong{display:block;font-size:22px;margin-top:8px}
+input,select{width:100%;padding:13px;margin:6px 0 12px;background:#101827;color:white;border:1px solid #40516b;border-radius:8px;font-size:15px}
+label{font-size:13px;color:#cbd5e1}
+button.action{background:#eab308;color:#172033;padding:13px;border:0;border-radius:8px;font-weight:bold;width:100%;margin:5px 0}
+button.danger{background:#a83232;color:white;border:0;padding:8px;border-radius:6px}
+button.small{background:#354a65;color:white;border:0;padding:8px;border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 6px;border-bottom:1px solid #35445a}
+th{color:#fbbf24}
+.tablewrap{overflow-x:auto}
+.muted{color:#aab8ca;font-size:13px}
+.hidden{display:none}
+.good{color:#4ade80}
+.bad{color:#fb7185}
+</style>
+</head>
+<body>
+
+<header>
+<h2>JOY HOPE</h2>
+<p>CEREAL & GENERAL SHOP • STOCK MANAGEMENT</p>
+</header>
+
+<nav>
+<button class="active" onclick="show('dashboard',this)">Home</button>
+<button onclick="show('inventory',this)">Stock</button>
+<button onclick="show('sales',this)">Sales</button>
+<button onclick="show('purchases',this)">Purchases</button>
+<button onclick="show('taking',this)">Stock Taking</button>
+<button onclick="show('records',this)">Records</button>
+</nav>
+
+<main>
+
+<section id="dashboard">
+<div class="panel">
+<h3>Shop Overview</h3>
+<p class="muted" id="today"></p>
+<div class="stats">
+<div class="stat"><small>Today's Sales</small><strong id="todaySales">KSh 0</strong></div>
+<div class="stat"><small>Today's Profit</small><strong id="todayProfit">KSh 0</strong></div>
+<div class="stat"><small>Total Products</small><strong id="totalProducts">0</strong></div>
+<div class="stat"><small>Low Stock Items</small><strong id="lowStock">0</strong></div>
+</div>
+</div>
+<div class="panel">
+<h3>Quick Actions</h3>
+<button class="action" onclick="show('sales',document.querySelectorAll('nav button')[2])">+ Record a Sale</button>
+<button class="action" onclick="show('inventory',document.querySelectorAll('nav button')[1])">+ Add Product</button>
+<button class="action" onclick="show('purchases',document.querySelectorAll('nav button')[3])">+ Record Purchase</button>
+</div>
+<div class="panel">
+<h3>Low Stock Alert</h3>
+<div id="alerts" class="muted">No products yet.</div>
+</div>
+</section>
+
+<section id="inventory" class="hidden">
+<div class="panel">
+<h3>Add New Product</h3>
+<label>Product name</label>
+<input id="pname" placeholder="e.g. Rice, Eggs, Sugar">
+<label>Measurement</label>
+<select id="punit"><option value="pcs">Pieces</option><option value="kg">Kilograms</option><option value="litres">Litres</option><option value="packets">Packets</option></select>
+<label>Opening stock</label>
+<input id="pstock" type="number" min="0" step="any" placeholder="Quantity">
+<label>Buying price per unit (KSh)</label>
+<input id="pcost" type="number" min="0" step="any" placeholder="Cost">
+<label>Selling price per unit (KSh)</label>
+<input id="pprice" type="number" min="0" step="any" placeholder="Selling price">
+<label>Low stock warning level</label>
+<input id="pmin" type="number" min="0" step="any" value="5">
+<button class="action" onclick="addProduct()">SAVE PRODUCT</button>
+</div>
+<div class="panel">
+<h3>Product Inventory</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Product</th><th>Stock</th><th>Buy</th><th>Sell</th><th>Action</th></tr></thead>
+<tbody id="productList"></tbody>
+</table></div>
+</div>
+</section>
+
+<section id="sales" class="hidden">
+<div class="panel">
+<h3>Record a Sale</h3>
+<label>Select product</label>
+<select id="saleProduct"></select>
+<label>Quantity sold</label>
+<input id="saleQty" type="number" min="0.01" step="any" placeholder="Quantity">
+<label>Selling price per unit (KSh)</label>
+<input id="salePrice" type="number" min="0" step="any" placeholder="Selling price">
+<button class="action" onclick="makeSale()">COMPLETE SALE</button>
+<p class="muted">Stock will automatically reduce after a sale.</p>
+</div>
+</section>
+
+<section id="purchases" class="hidden">
+<div class="panel">
+<h3>Record New Stock Purchase</h3>
+<label>Select product</label>
+<select id="buyProduct"></select>
+<label>Quantity purchased</label>
+<input id="buyQty" type="number" min="0.01" step="any" placeholder="Quantity">
+<label>Buying price per unit (KSh)</label>
+<input id="buyCost" type="number" min="0" step="any" placeholder="Cost">
+<button class="action" onclick="makePurchase()">SAVE PURCHASE</button>
+<p class="muted">Purchased stock will automatically increase your inventory.</p>
+</div>
+</section>
+
+<section id="taking" class="hidden">
+<div class="panel">
+<h3>Physical Stock Taking</h3>
+<p class="muted">Count the actual stock in your shop and enter the quantity below.</p>
+<label>Select product</label>
+<select id="countProduct"></select>
+<label>Actual quantity counted</label>
+<input id="countQty" type="number" min="0" step="any" placeholder="Actual quantity">
+<button class="action" onclick="stockTake()">UPDATE STOCK COUNT</button>
+</div>
+<div class="panel">
+<h3>Stock Differences</h3>
+<div id="differences" class="muted">No stock counts yet.</div>
+</div>
+</section>
+
+<section id="records" class="hidden">
+<div class="panel">
+<h3>Sales History</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Total</th><th>Profit</th></tr></thead>
+<tbody id="salesList"></tbody>
+</table></div>
+</div>
+<div class="panel">
+<h3>Purchase History</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Total Cost</th></tr></thead>
+<tbody id="purchaseList"></tbody>
+</table></div>
+</div>
+<div class="panel">
+<h3>Data Backup</h3>
+<p class="muted">Download a backup of your shop records. Keep it somewhere safe.</p>
+<button class="action" onclick="backup()">DOWNLOAD BACKUP</button>
+<label>Restore backup file</label>
+<input type="file" id="restoreFile" accept=".json,application/json">
+<button class="action" onclick="restore()">RESTORE BACKUP</button>
+</div>
+</section>
+
+</main>
+
+<script>
+const KEY="joyhope_shop_v1";
+let data;
+try{
+data=JSON.parse(localStorage.getItem(KEY))||{products:[],sales:[],purchases:[],counts:[]};
+}catch(e){
+data={products:[],sales:[],purchases:[],counts:[]};
+}
+function save(){
+localStorage.setItem(KEY,JSON.stringify(data));
+render();
+}
+function money(n){
+return "KSh "+Number(n||0).toLocaleString("en-KE",{maximumFractionDigits:2});
+}
+function dateNow(){
+return new Date().toLocaleDateString("en-CA");
+}
+function show(id,btn){
+document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+if(btn)btn.classList.add("active");
+render();
+}
+function addProduct(){
+let name=document.getElementById("pname").value.trim();
+let unit=document.getElementById("punit").value;
+let stock=Number(document.getElementById("pstock").value);
+let cost=Number(document.getElementById("pcost").value);
+let price=Number(document.getElementById("pprice").value);
+let min=Number(document.getElementById("pmin").value);
+if(!name||document.getElementById("pstock").value===""||
+document.getElementById("pcost").value===""||
+document.getElementById("pprice").value===""||
+stock<0||cost<0||price<0||min<0){
+alert("Please enter valid product details.");return;
+}
+data.products.push({id:Date.now()+Math.random(),name,unit,stock,cost,price,min});
+["pname","pstock","pcost","pprice"].forEach(id=>document.getElementById(id).value="");
+save();alert("Product saved successfully!");
+}
+function makeSale(){
+let id=Number(document.getElementById("saleProduct").value);
+let p=data.products.find(x=>x.id===id);
+let q=Number(document.getElementById("saleQty").value);
+let price=Number(document.getElementById("salePrice").value);
+if(!p||!document.getElementById("saleQty").value||!document.getElementById("salePrice").value||q<=0||price<0){
+alert("Enter valid sale details.");return;
+}
+if(q>p.stock){alert("Not enough stock available!");return;}
+let total=q*price;
+let profit=q*(price-p.cost);
+p.stock-=q;
+data.sales.unshift({date:new Date().toISOString(),name:p.name,qty:q,unit:p.unit,price,total,profit});
+document.getElementById("saleQty").value="";
+document.getElementById("salePrice").value="";
+save();alert("Sale recorded successfully!");
+}
+function makePurchase(){
+let id=Number(document.getElementById("buyProduct").value);
+let p=data.products.find(x=>x.id===id);
+let q=Number(document.getElementById("buyQty").value);
+let cost=Number(document.getElementById("buyCost").value);
+if(!p||!document.getElementById("buyQty").value||!document.getElementById("buyCost").value||q<=0||cost<0){
+alert("Enter valid purchase details.");return;
+}
+let oldValue=p.stock*p.cost;
+p.stock+=q;
+p.cost=(oldValue+q*cost)/p.stock;
+data.purchases.unshift({date:new Date().toISOString(),name:p.name,qty:q,unit:p.unit,cost,total:q*cost});
+document.getElementById("buyQty").value="";
+document.getElementById("buyCost").value="";
+save();alert("Purchase recorded!");
+}
+function stockTake(){
+let id=Number(document.getElementById("countProduct").value);
+let p=data.products.find(x=>x.id===id);
+let value=document.getElementById("countQty").value;
+let q=Number(value);
+if(!p||value===""||q<0){alert("Enter a valid count.");return;}
+let old=p.stock;
+p.stock=q;
+data.counts.unshift({date:new Date().toISOString(),name:p.name,expected:old,actual:q,difference:q-old,unit:p.unit});
+document.getElementById("countQty").value="";
+save();alert("Stock count updated!");
+}
+function deleteProduct(id){
+if(!confirm("Delete this product? Its sales and purchase history will remain."))return;
+data.products=data.products.filter(p=>p.id!==id);save();
+}
+function render(){
+let products=data.products;
+let selectOptions=products.map(p=>`<option value="${p.id}">${escapeHTML(p.name)} (${p.stock} ${p.unit})</option>`).join("");
+["saleProduct","buyProduct","countProduct"].forEach(id=>{
+let el=document.getElementById(id),old=el.value;
+el.innerHTML=selectOptions;
+if(products.some(p=>String(p.id)===old))el.value=old;
+});
+document.getElementById("productList").innerHTML=products.map(p=>`
+<tr><td>${escapeHTML(p.name)}</td><td>${p.stock} ${p.unit}</td>
+<td>${money(p.cost)}</td><td>${money(p.price)}</td>
+<td><button class="danger" onclick="deleteProduct(${p.id})">Delete</button></td></tr>`).join("")||'<tr><td colspan="5">No products added.</td></tr>';
+let today=dateNow();
+let todays=data.sales.filter(s=>s.date.slice(0,10)===today);
+document.getElementById("today").textContent=new Date().toDateString();
+document.getElementById("todaySales").textContent=money(todays.reduce((a,s)=>a+s.total,0));
+document.getElementById("todayProfit").textContent=money(todays.reduce((a,s)=>a+s.profit,0));
+document.getElementById("totalProducts").textContent=products.length;
+let low=products.filter(p=>p.stock<=p.min);
+document.getElementById("lowStock").textContent=low.length;
+document.getElementById("alerts").innerHTML=low.map(p=>`<p class="bad">${escapeHTML(p.name)}: ${p.stock} ${p.unit} remaining</p>`).join("")||"No low stock alerts.";
+document.getElementById("salesList").innerHTML=data.sales.map(s=>`<tr><td>${new Date(s.date).toLocaleDateString()}</td><td>${escapeHTML(s.name)}</td><td>${s.qty} ${s.unit}</td><td>${money(s.total)}</td><td>${money(s.profit)}</td></tr>`).join("")||'<tr><td colspan="5">No sales yet.</td></tr>';
+document.getElementById("purchaseList").innerHTML=data.purchases.map(p=>`<tr><td>${new Date(p.date).toLocaleDateString()}</td><td>${escapeHTML(p.name)}</td><td>${p.qty} ${p.unit}</td><td>${money(p.total)}</td></tr>`).join("")||'<tr><td colspan="4">No purchases yet.</td></tr>';
+document.getElementById("differences").innerHTML=data.counts.map(c=>`<p>${escapeHTML(c.name)}: ${c.expected} → ${c.actual} ${c.unit} <strong class="${c.difference<0?'bad':'good'}">(${c.difference>0?'+':''}${c.difference})</strong></p>`).join("")||"No stock counts yet.";
+}
+function escapeHTML(s){
+return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function backup(){
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="Joy-Hope-Backup.json";
+a.click();
+URL.revokeObjectURL(a.href);
+}
+function restore(){
+let file=document.getElementById("restoreFile").files[0];
+if(!file){alert("Choose a backup file first.");return;}
+let reader=new FileReader();
+reader.onload=()=>{
+try{
+let d=JSON.parse(reader.result);
+if(!Array.isArray(d.products)||!Array.isArray(d.sales)||!Array.isArray(d.purchases)||!Array.isArray(d.counts))throw Error();
+if(!confirm("Restore backup? This replaces the current records."))return;
+data=d;save();alert("Backup restored!");
+}catch(e){alert("Invalid backup file.");}
+};
+reader.readAsText(file);
+}
+render();
+</script>
+</body>
+  </html>
+  
